@@ -35,36 +35,8 @@ def readFromLocal():
       proxIndex=pickle.load(f)
     return proxIndex
   return None
-
   
 ps = PorterStemmer()
-#convert the string into two array of operands and operatiors
-def procBooleanQuery(query):
-  query=query.split(" ")
-  terms=[]
-  operators=[]
-  for i in query:
-    i=i.lower()
-    if(i=='not' or i=='and' or i=='not'):
-      operators.append(i)
-    elif(i!=''):#to avoid and empty string generated due to extra/random spaces
-      terms.append(ps.stem(i))
-  return terms,operators
-
-
-#convert the string into an array of operands/terms and the proximity
-def procProximityQuery(query):
-  query=query.split(" ")
-  terms=[]
-  k=1#if the query doesnt contain the proximity we assume 1
-  for i in query:
-    i=i.lower()
-    if(i.isalpha()):
-      terms.append(ps.stem(i))
-    elif(i!=''):#to avoid and empty string generated due to extra/random spaces
-      k=int(i[1:])
-  return terms,k
-
 
 def tokenizeAndClean(fileContent, stopWords):
   tokens = word_tokenize(fileContent) #run the tokenizer for the words
@@ -133,29 +105,28 @@ def tokenizeAndClean(fileContent, stopWords):
   cleanedTokens={}
   index=0#to maintain the position
   for token in tokens:#process the tokens/clean
-    #the token is a stop word or custom made useless word
     flag=False
+    #the token is a stop word or custom made useless word
     for stopword in stopWords: 
       if(stopword==token):
         flag=True
+        break
     for uselessword in uselessWords:
       if(uselessword==token):
         flag=True
+        break
 
     if(flag):#the word belongs to either of the mentioned lists
       index+=1
       continue
     
-    elif (len(token)<=1): #the token is a single charachter or empty string(special case/exception)
-      index+=1
+    if (len(token)<=1): #the token is a single charachter or empty string(special case/exception)
       continue
    
     #if it passes all previous filters then place it in the dictionary
     if(token in cleanedTokens):#already present in the dictionary
-      arr=cleanedTokens[token]
-      arr.append(index)
-      cleanedTokens[token]=arr
+      cleanedTokens[token]+=1
     else:
-      cleanedTokens[token]=[index]
+      cleanedTokens[token]=1
     index+=1
   return cleanedTokens
