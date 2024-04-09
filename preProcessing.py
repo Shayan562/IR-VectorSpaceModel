@@ -98,6 +98,11 @@ def tokenizeAndClean(fileContent, stopWords):
       words=words.split(' ')
       tokens.pop(i)
       tokens=tokens[:i]+words[:]+tokens[i:]
+    if re.search(r'\w*[\x9a\x8e\x88\x8a]\w*',token):#special case escap characters
+      words = re.sub(r'[\x9a\x8e\x88\x8a]',' ',token)
+      words=words.split(' ')
+      tokens.pop(i)
+      tokens=tokens[:i]+words[:]+tokens[i:]
     i+=1
 
 
@@ -124,6 +129,7 @@ def tokenizeAndClean(fileContent, stopWords):
       continue
    
     #if it passes all previous filters then place it in the dictionary
+    # print(token)
     if(token in cleanedTokens):#already present in the dictionary
       cleanedTokens[token]+=1
     else:
