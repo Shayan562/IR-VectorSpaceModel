@@ -36,7 +36,7 @@ def readFromLocal():
     return proxIndex
   return None
   
-ps = PorterStemmer()
+# ps = PorterStemmer()
 
 def tokenizeAndClean(fileContent, stopWords):
   tokens = word_tokenize(fileContent) #run the tokenizer for the words
