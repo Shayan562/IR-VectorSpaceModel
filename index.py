@@ -20,15 +20,15 @@ from glob import glob
         ->Python has min heap so mulitply score with -1 to use it as max-heap
 '''
 class VectorSpaceModel:
-    def __init__(self):
+    def __init__(self, ALPHA=0.01, K=10):
         self.docArray=[]
         self.termDocVector={}
         self.docTermVectors={}
         self.termArray=[]
         self.queryVector=[]
         self.championList={}
-        self.K=10 #champion list size
-        self.ALPHA=0.01
+        self.ALPHA=ALPHA
+        self.K=K #champion list size
 
     def saveIndex(self):
         try:
@@ -44,8 +44,8 @@ class VectorSpaceModel:
             with open('./IndexDB/TermArray.pickle','wb') as f:
                 pickle.dump(self.termArray,f)
 
-            with open('./IndexDB/ChampionList.pickle','wb') as f:
-                pickle.dump(self.championList,f)
+            # with open('./IndexDB/ChampionList.pickle','wb') as f:
+            #     pickle.dump(self.championList,f)
         except:
             #incase there is an issue, delete the remainaing to avoid errors in the index
             files=glob('./IndexDB/*.pickle')
@@ -73,16 +73,14 @@ class VectorSpaceModel:
                     self.docTermVectors=pickle.load(f)
                 with open('./IndexDB/TermArray.pickle','rb') as f:
                     self.termArray=pickle.load(f)
-                with open('./IndexDB/ChampionList.pickle','rb') as f:
-                    self.championList=pickle.load(f)
+                # with open('./IndexDB/ChampionList.pickle','rb') as f:
+                #     self.championList=pickle.load(f)
             except:
-                print("Creating partial indexes")
+                # print("Creating partial indexes")
                 self.docTermVectors={}
                 self.termArray=[]
-                self.championList={}
                 self.createDocVectors()
                 self.normalizeDocs()
-                self.createChampionList()
                 self.saveIndex()
 
 
@@ -216,9 +214,10 @@ class VectorSpaceModel:
         # print(queryTerms)
         docs=set()
         for term in queryTerms:
-            arr=self.championList[term]
-            for d in arr:
-                docs.add(d)
+            if(term in self.championList):
+                arr=self.championList[term]
+                for d in arr:
+                    docs.add(d)
         # print(docs)
         self.createQueryVector(queryTerms) 
         # print(self.queryVector)
