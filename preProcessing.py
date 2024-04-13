@@ -1,13 +1,7 @@
-import nltk
 import re
 import string
 import os
-import pickle
 from nltk.tokenize import word_tokenize
-from nltk.stem import PorterStemmer
-nltk.download('punkt')
-
-#convert to class and fix content
 
 #to read the reasearch papers/stopword file
 def getFileContent(fileLocation):#ResearchPapers/1.txt
@@ -19,24 +13,6 @@ def getFileContent(fileLocation):#ResearchPapers/1.txt
   else:
     return ""
   
-#save the positional index to hardrive in .pickle format
-def saveToLocal(proxIndex):
-  with open('./Index.pickle','wb') as f:
-    pickle.dump(proxIndex,f)
-  return True
-
-"""
-if the file exists read that and return the index
-since the set is static we dont need to check for the update status of the file
-"""
-def readFromLocal():
-  if os.path.exists('./Index.pickle'):
-    with open('./Index.pickle','rb') as f:
-      proxIndex=pickle.load(f)
-    return proxIndex
-  return None
-  
-# ps = PorterStemmer()
 
 def tokenizeAndClean(fileContent, stopWords):
   tokens = word_tokenize(fileContent) #run the tokenizer for the words

@@ -1,10 +1,3 @@
-import pickle
-from os import path,remove,makedirs
-from math import log2
-from heapq import heappop,heappush
-from glob import glob
-
-
 ''' Steps (for creating)
     1. Create Index (term-doc matrix with tf as values) using dictionary(term)-value(list)
         ->create doc array(list) to know which doc has which index
@@ -19,6 +12,12 @@ from glob import glob
     5. Create the Champion List (K=10 and non-zero weights) using max-heap
         ->Python has min heap so mulitply score with -1 to use it as max-heap
 '''
+import pickle
+from os import path,remove
+from math import log2
+from heapq import heappop,heappush
+from glob import glob
+
 class VectorSpaceModel:
     def __init__(self, ALPHA=0.01, K=10):
         self.docArray=[]
@@ -29,6 +28,7 @@ class VectorSpaceModel:
         self.championList={}
         self.ALPHA=ALPHA
         self.K=K #champion list size
+
 
     def saveIndex(self):
         try:
@@ -43,9 +43,6 @@ class VectorSpaceModel:
 
             with open('./IndexDB/TermArray.pickle','wb') as f:
                 pickle.dump(self.termArray,f)
-
-            # with open('./IndexDB/ChampionList.pickle','wb') as f:
-            #     pickle.dump(self.championList,f)
         except:
             #incase there is an issue, delete the remainaing to avoid errors in the index
             files=glob('./IndexDB/*.pickle')
@@ -55,7 +52,6 @@ class VectorSpaceModel:
 
     def readIndex(self):
         flag=None
-
         if path.exists('./IndexDB/TermDocVector.pickle') and path.exists('./IndexDB/DocArray.pickle'):
             try:
                 with open('./IndexDB/TermDocVector.pickle','rb') as f:
@@ -82,93 +78,80 @@ class VectorSpaceModel:
                 self.createDocVectors()
                 self.normalizeDocs()
                 self.saveIndex()
-
-
-
-        print(flag)
         return flag
     
     def computeScore(self):
-        # self.idf={}
         numDocs=len(self.docArray)
-        #computing idf then multiplying with tf for score
+        '''computing idf then multiplying with tf for score'''
         for key in self.termDocVector.keys():#each term
             df=0
             arr=self.termDocVector[key]
             for i in arr:#get df for a given term
                 if(i != 0):#if non-zero tf
                     df+=1
+                    
             if(len(arr)<numDocs):#if the array for term is small(add zeros for docs)
                 diff=numDocs-len(arr)
                 arr.extend([0 for i in range(diff)])
-            """print(f'Vec-> {key}: {self.termDocVector[key]}')"""
-            #getting idf for that term log base 2(n/df)
-            idf=log2(numDocs/df)
-            # self.idf[key]=log2(numDocs/df)
-            """print(f'IDF-> {key}: {idf}')"""
-            for i in range(numDocs):
+            
+            idf=log2(numDocs/df) #getting idf for that term log base 2(n/df)
+            for i in range(numDocs):#multiplying idf
                 arr[i]*=idf
             self.termDocVector[key]=arr
-            """print(f'Vec-> {key}: {self.termDocVector[key]}')"""
+
 
     def createDocVectors(self):
-        # print(self.docArray)
+        '''Create the doc vectors using the term vectors'''
         numDocs=len(self.docArray)
         numTerms=len(self.termDocVector)
-        for i in self.docArray:
+        for i in self.docArray:#init vector for each doc
             self.docTermVectors[i]=[0 for i in range(numTerms)]
 
         index=0
-        for key in self.termDocVector.keys():
-            self.termArray.append(key) 
-            arr=self.termDocVector[key]
-            # print(f'{key}:{arr}')
-            for i in range(numDocs):
+        for key in self.termDocVector.keys():#for each term
+            self.termArray.append(key)#add to array for maintaining the right index
+            arr=self.termDocVector[key]#getting the tf-idf for that term(all docs)
+            for i in range(numDocs):#adding the value to each doc at appropriate index
                 self.docTermVectors[self.docArray[i]][index]=arr[i]
-            index+=1 
-        # print(self.termArray)
-        # print(self.docTermVectors)
+            index+=1#index for the next term
+
 
     def normalizeDocs(self):
-        for doc in self.docTermVectors.keys():
-            arr=self.docTermVectors[doc]
-            # print(self.docTermVectors[doc])
+        '''L2 Norm'''
+        for doc in self.docTermVectors.keys():#for each doc vector
+            arr=self.docTermVectors[doc]#get the vector
             weight=0
-            for i in arr:
+
+            for i in arr:#get the weight
                 weight+=i**2
-            for i in range(len(arr)):
-                arr[i]=arr[i]/(weight**0.5)
-                # if(i==0):
-                    # print(f'i:{i}, doc:{doc}, arr:{arr[i]}')
+
+            weight=weight**0.5
+            for i in range(len(arr)):#divide each value by the weight
+                arr[i]=arr[i]/weight
+
             self.docTermVectors[doc]=arr
-            # print(f'Doc {doc}, Weight {weight}')
-            # print(arr)
-    
-    def createChampionList(self):
-        
-        numDocs=20
-        
-        for term in self.termDocVector.keys():
+
+
+    def createChampionList(self): 
+        ''' Creating champion lists of max size K using max heap.
+            Term-Doc Matrix is used for this'''
+        numDocs=len(self.docArray) 
+        for term in self.termDocVector.keys():#for each term
             docs=self.termDocVector[term]#get the docs
-            heapSort=[]
+            heapSort=[]#using max heap
             count=0
             for i in range(numDocs):
-                if(docs[i]!=0):
+                if(docs[i]!=0):#for non-zero values only
+                    '''Python only has min heap built in so mulitplying with -1 to use it like max heap'''
                     heappush(heapSort,(docs[i]*-1,self.docArray[i]))
                     count+=1
-                if(count==self.K):
-                    break
 
-            count=(min(len(heapSort),count))#in case list size < K
+            count=(min(len(heapSort),self.K))#in case list size < K
             arr=[]
             for i in range(count):
                 arr.append(heappop(heapSort)[1])
             self.championList[term]=arr
 
-        # for key in self.championList:
-        #     print(key)
-        #     print(self.termDocVector[key])
-        #     print(self.championList[key])
 
     def cosineScore(self, docID):
         '''Already Normalized(docVecs and query vector) so simple dot product will suffice'''
@@ -178,13 +161,14 @@ class VectorSpaceModel:
             score+=doc[i]*self.queryVector[i]
         return score
 
+
     def createQueryVector(self, queryTerms:list[str]):#after pre-processing
         self.queryVector=[0 for i in self.termArray] #init query array of appropriate lenth with zeros
         if(len(queryTerms)==0):
             return
         
         '''
-        for calculating magnitude later(l2 normalizaiton). Saves time/iterations + divide by zero error
+        using nonZeroIndex for calculating magnitude later(l2 normalizaiton). Saves time/iterations + divide by zero error
         we can have two same terms(maybe) so account for edge case be using set
         '''
         nonZeroIndex=set()
@@ -205,39 +189,39 @@ class VectorSpaceModel:
         for index in nonZeroIndex:
             self.queryVector[index]/=weight
         
+
     def evaluateQuery(self, queryTerms):
         ''' 1. Get query->Pre-processed (incl stemming)
             2. Get docs (via champion lists)
             3. Make Query Vector
             4. Get Cosine-Score(docs,q)
             5. Return result (ranked and < ALPHA)'''
-        # print(queryTerms)
+
         docs=set()
         for term in queryTerms:
             if(term in self.championList):
                 arr=self.championList[term]
                 for d in arr:
                     docs.add(d)
-        # print(docs)
+
         self.createQueryVector(queryTerms) 
-        # print(self.queryVector)
+
         heapResult=[]
         for doc in docs:
             score=self.cosineScore(doc)
             heappush(heapResult,(score*-1,doc))
 
-        # print(heapResult)
+
         result=[]
         for i in range(len(heapResult)):#run for complete heap or when score<alpha
             doc=heappop(heapResult)
             if(doc[0]*-1<self.ALPHA):
                 break
             result.append(doc[1])
-        # print(result)
+
         return result
 
         
-
     def insert(self, doc, word, tf):
         index=-1#to add the tf for a given doc
         if(doc not in self.docArray):#add doc to list(to maintain correct order)

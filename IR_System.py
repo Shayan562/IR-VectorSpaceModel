@@ -1,5 +1,5 @@
 '''
-    1. Process Documnets
+    1. Process Documents
     2. Generate Index(load afterwards)
     3. Get Query
     4. Convert Query
@@ -22,8 +22,6 @@ class IRSystem:
 
         indexRead=self.index.readIndex()#try to read saved index
         if(indexRead==None):#if we cant read the index
-            # print("Creating INdex")
-            # files=['1']
             files=['1','2','3','7','8','9','11','12','13','14','15','16','17','18','21','22','23','24','25','26']#pre difined set of files
             for i in files:#parse each file and insert into index one file at a time
                 content= pp.getFileContent('./ResearchPapers/'+i+'.txt')#read the file
@@ -32,7 +30,7 @@ class IRSystem:
                     word=self.ps.stem(key)#stemming
                     self.index.insert(i,word,cleanedWords[key])#insertion
 
-            ''' First creatint the term-doc vector(done above) we build rest of the vecotrs
+            ''' First we create the term-doc vector(done above) then we build rest of the vectors
                 Following tasks are done in order:
                 1. tf-idf scores
                 2. Creation of Doc-Vecotrs
@@ -41,10 +39,11 @@ class IRSystem:
             self.index.computeScore()
             self.index.createDocVectors()
             self.index.normalizeDocs()
-            self.index.saveIndex()#save the craetd index for future
+            self.index.saveIndex()#save the index for future
         
-        '''Champion list created each time due to the dynamic allocation of champion list size'''
+        '''Champion list created each time due to the dynamic allocation of champion list size(k)'''
         self.index.createChampionList()
+
 
     def queryPreProcessing(self, query):
         '''Clean The query tokens then stem each word'''
@@ -55,14 +54,14 @@ class IRSystem:
             words.append(word)
         return words
     
+
     def runQuery(self,query):
         '''Process the query then run it in the vectore space model(index) and return result'''
         terms=self.queryPreProcessing(query)
         result=self.index.evaluateQuery(terms)
         return result
-        # result=
-        # q=self.queryPreProcessing(queries[i])
     
+
     def goldenSetTest(self):
         '''Golden Set ---Issues with the given answers(manually checked)'''
         queries=['machine learning', 'local global feature','deep convolutional network','intelligent search','transformer','cancer','feature selection machine learning','information retrieval','natural intelligence','artificial intelligence']
@@ -73,7 +72,3 @@ class IRSystem:
             print(queries[i])
             print(f'Model:   {answers[i].split(',')}')
             print(f'Current: {result}')
-
-# engine=IRSystem()
-# print(engine.runQuery('machine learning'))
-# engine.goldenSetTest()
