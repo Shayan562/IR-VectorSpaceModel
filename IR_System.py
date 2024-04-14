@@ -51,7 +51,8 @@ class IRSystem:
         words=[]
         for key in cleanedWords.keys():
             word=self.ps.stem(key)
-            words.append(word)
+            for i in range(cleanedWords[key]):
+                words.append(word)
         return words
     
 
